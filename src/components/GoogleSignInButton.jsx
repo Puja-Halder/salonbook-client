@@ -7,10 +7,15 @@ import toast from "react-hot-toast";
 export default function GoogleSignInButton() {
   const handleGoogleSignIn = async () => {
     try {
-      await authClient.signIn.social({
+      const { error } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
+        callbackURL: "http://localhost:3000/",
+        errorCallbackURL: "http://localhost:3000/signin",
       });
+
+      if (error) {
+        toast.error(error.message || "Google sign-in failed.");
+      }
     } catch (error) {
       toast.error("Google sign-in failed. Please try again.");
       console.error(error);
