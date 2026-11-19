@@ -1,8 +1,15 @@
 
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  ChevronDown,
+  LayoutDashboard,
+  LogOut,
+  UserRound,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { authClient } from "@/lib/auth-client";
 
@@ -15,9 +22,15 @@ const navLinks = [
 
 export default function Navbar() {
   const router = useRouter();
-  const { data: session, isPending } = authClient.useSession();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
+  const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
+
+  const dashboardLink =
+    user?.role === "admin"
+      ? "/dashboard/admin"
+      : "/dashboard/customer";
 
   const handleSignOut = async () => {
     try {
@@ -28,6 +41,7 @@ export default function Navbar() {
         return;
       }
 
+      setDropdownOpen(false);
       toast.success("Signed out successfully!");
       router.refresh();
       router.push("/");
@@ -62,19 +76,53 @@ export default function Navbar() {
           {isPending ? (
             <span className="text-sm text-gray-400">Loading...</span>
           ) : user ? (
-            <>
-              <span className="hidden text-sm font-semibold text-[#321b2b] sm:inline">
-                Hello, {user.name}
-              </span>
-
+            <div className="relative">
               <button
                 type="button"
-                onClick={handleSignOut}
-                className="rounded-full border border-pink-300 px-5 py-2.5 text-sm font-semibold text-pink-700 transition hover:bg-pink-50"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="flex items-center gap-2 rounded-full border border-pink-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#321b2b] transition hover:bg-pink-50"
               >
-                Sign Out
+                <UserRound size={17} />
+                <span className="max-w-32 truncate">{user.name}</span>
+                <ChevronDown
+                  size={16}
+                  className={`transition ${
+                    dropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
               </button>
-            </>
+
+              {dropdownOpen && (
+                <div className="absolute right-0 top-full z-50 mt-3 w-56 overflow-hidden rounded-xl border border-pink-100 bg-white py-2 shadow-xl">
+                  <div className="border-b border-pink-100 px-4 py-3">
+                    <p className="truncate text-sm font-semibold text-[#321b2b]">
+                      {user.name}
+                    </p>
+                    <p className="truncate text-xs text-[#806b78]">
+                      {user.email}
+                    </p>
+                  </div>
+
+                  <Link
+                    href={dashboardLink}
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#765b69] transition hover:bg-pink-50 hover:text-pink-600"
+                  >
+                    <LayoutDashboard size={17} />
+                    Dashboard
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
+                  >
+                    <LogOut size={17} />
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <>
               <Link
