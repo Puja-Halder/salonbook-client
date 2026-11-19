@@ -4,28 +4,77 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ImagePlus } from "lucide-react";
 import toast from "react-hot-toast";
 import { authClient } from "@/lib/auth-client";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
 
 export default function SignUpPage() {
   const router = useRouter();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [imageUrl, setImageUrl] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters long.");
+      return;
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      toast.error("Password must contain at least one uppercase letter.");
+      return;
+    }
+
+    if (!/[a-z]/.test(password)) {
+      toast.error("Password must contain at least one lowercase letter.");
+      return;
+    }
+
+    if (imageFile && imageUrl.trim()) {
+      toast.error("Please upload an image or enter an image URL, not both.");
+      return;
+    }
+
     setLoading(true);
 
     try {
+      let profileImage = imageUrl.trim();
+
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("image", imageFile);
+
+        const uploadResponse = await fetch(
+          "http://localhost:5000/api/upload",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        const uploadResult = await uploadResponse.json();
+
+        if (!uploadResponse.ok || !uploadResult.success) {
+          toast.error(uploadResult.message || "Profile image upload failed.");
+          return;
+        }
+
+        profileImage = uploadResult.imageUrl;
+      }
+
       const { error } = await authClient.signUp.email({
-        name,
-        email,
+        name: name.trim(),
+        email: email.trim(),
         password,
+        ...(profileImage ? { image: profileImage } : {}),
       });
 
       if (error) {
@@ -109,7 +158,7 @@ export default function SignUpPage() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="Create a password"
-                minLength={8}
+                minLength={6}
                 required
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 pr-12 outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-100"
               />
@@ -127,10 +176,55 @@ export default function SignUpPage() {
                 )}
               </button>
             </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="profileImage"
+              className="mb-2 block text-sm font-medium text-gray-700"
+            >
+              Profile Image
+            </label>
+
+            <div className="flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-3">
+              <ImagePlus size={20} className="shrink-0 text-pink-600" />
+
+              <input
+                id="profileImage"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(event) => {
+                  setImageFile(event.target.files?.[0] || null);
+                  setImageUrl("");
+                }}
+                className="w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-pink-50 file:px-3 file:py-2 file:font-medium file:text-pink-700 hover:file:bg-pink-100"
+              />
+            </div>
+
+            <p className="my-3 text-center text-sm text-gray-500">
+              OR
+            </p>
+
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={(event) => {
+                setImageUrl(event.target.value);
+                setImageFile(null);
+              }}
+              placeholder="Paste your profile image URL"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-100"
+            />
 
             <p className="mt-2 text-xs text-gray-500">
-              Password must contain at least 8 characters.
+              Optional. Maximum upload size: 5 MB.
             </p>
+
+            {imageFile && (
+              <p className="mt-2 text-sm text-pink-600">
+                Selected: {imageFile.name}
+              </p>
+            )}
           </div>
 
           <button
