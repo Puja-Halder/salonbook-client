@@ -137,7 +137,7 @@ export default function Services() {
                   </div>
 
                   <Link
-                    href={`/services/${service.slug}`}
+                    href={`/services/${service._id}`}
                     className="mt-6 block rounded-full border border-pink-300 px-5 py-3 text-center text-sm font-semibold text-pink-700 transition hover:bg-pink-600 hover:text-white"
                   >
                     View Details

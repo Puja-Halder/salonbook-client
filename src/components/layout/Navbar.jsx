@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -23,9 +23,14 @@ const navLinks = [
 export default function Navbar() {
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const dashboardLink =
     user?.role === "admin"
@@ -45,7 +50,7 @@ export default function Navbar() {
       toast.success("Signed out successfully!");
       router.refresh();
       router.push("/");
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong.");
     }
   };
@@ -73,7 +78,7 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-3">
-          {isPending ? (
+          {!mounted || isPending ? (
             <span className="text-sm text-gray-400">Loading...</span>
           ) : user ? (
             <div className="relative">

@@ -26,6 +26,27 @@ export const getServices = async (params = {}) => {
   return result;
 };
 
+export const getAllServicesForAdmin = async (token) => {
+  return authenticatedRequest(
+    "/api/services/admin/all?limit=50",
+    token
+  );
+};
+
+export const getServiceById = async (id) => {
+  const response = await fetch(`${API_BASE_URL}/api/services/${id}`, {
+    cache: "no-store",
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || "Failed to load service.");
+  }
+
+  return result;
+};
+
 export const getServiceCategories = async () => {
   const response = await fetch(
     `${API_BASE_URL}/api/services/categories`,
@@ -85,6 +106,18 @@ export const updateService = async (id, serviceData, token) => {
 
 export const deactivateService = async (id, token) => {
   return authenticatedRequest(`/api/services/${id}`, token, {
+    method: "DELETE",
+  });
+};
+
+export const reactivateService = async (id, token) => {
+  return authenticatedRequest(`/api/services/${id}/activate`, token, {
+    method: "PATCH",
+  });
+};
+
+export const permanentlyDeleteService = async (id, token) => {
+  return authenticatedRequest(`/api/services/${id}/permanent`, token, {
     method: "DELETE",
   });
 };
