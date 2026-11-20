@@ -1,47 +1,9 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { authClient } from "@/lib/auth-client";
-import { getServices } from "@/lib/api";
 
 export default function Hero() {
-  const { data: session, isPending } = authClient.useSession();
-  const [firstServiceId, setFirstServiceId] = useState("");
-
-  const user = session?.user;
-
-  useEffect(() => {
-    let active = true;
-
-    const loadFirstService = async () => {
-      try {
-        const result = await getServices({ limit: 1 });
-
-        if (active && result.services?.length) {
-          setFirstServiceId(result.services[0]._id);
-        }
-      } catch (error) {
-        console.error("Failed to load a service:", error.message);
-      }
-    };
-
-    loadFirstService();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const getBookingLink = () => {
-    if (!user) return "/signin";
-    if (user.isBlocked) return "/";
-    if (user.role === "admin") return "/dashboard/admin";
-
-    return firstServiceId ? `/services/${firstServiceId}` : "/services";
-  };
-
   return (
     <section className="overflow-hidden bg-[#fff0f5]">
       <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 py-16 md:grid-cols-2 md:py-24 lg:px-10">
@@ -64,11 +26,7 @@ export default function Hero() {
 
           <div className="mt-9 flex flex-wrap items-center gap-4">
             <Link
-              href={getBookingLink()}
-              aria-disabled={
-                isPending ||
-                (user?.role === "customer" && !firstServiceId)
-              }
+              href="/services"
               className="rounded-full bg-pink-600 px-8 py-4 font-semibold text-white shadow-lg shadow-pink-200 transition hover:-translate-y-1 hover:bg-pink-700"
             >
               Book Appointment →
