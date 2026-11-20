@@ -149,3 +149,13 @@ export const createAppointment = async (appointmentData, token) => {
     body: JSON.stringify(appointmentData),
   });
 };
+
+export const getMyAppointments = async (token) => {
+  return authenticatedRequest("/api/appointments/my", token);
+};
+
+export const cancelMyAppointment = async (id, token) => {
+  return authenticatedRequest(`/api/appointments/${id}/cancel`, token, {
+    method: "PATCH",
+  });
+};
