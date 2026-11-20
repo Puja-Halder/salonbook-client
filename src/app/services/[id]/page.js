@@ -13,6 +13,8 @@ import {
   X,
   Save,
   LoaderCircle,
+  CalendarDays,
+  CalendarCheck,
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -21,6 +23,7 @@ import {
   getServiceById,
   updateService,
   deactivateService,
+  createAppointment,
 } from "@/lib/api";
 import toast from "react-hot-toast";
 
@@ -33,6 +36,23 @@ const categories = [
   "manicure-pedicure",
   "spa-massage",
 ];
+
+const getDhakaDate = () => {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Dhaka",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+};
+
+const formatAppointmentTime = (time) => {
+  const [hours, minutes] = time.split(":").map(Number);
+  const period = hours >= 12 ? "PM" : "AM";
+  const hour = hours % 12 || 12;
+
+  return `${String(hour).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${period}`;
+};
 
 function ServiceDetailsContent() {
   const params = useParams();
@@ -47,6 +67,10 @@ function ServiceDetailsContent() {
   const [saving, setSaving] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
 
+  const [appointmentDate, setAppointmentDate] = useState("");
+  const [appointmentTime, setAppointmentTime] = useState("");
+  const [booking, setBooking] = useState(false);
+
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -58,6 +82,7 @@ function ServiceDetailsContent() {
 
   const user = session?.user;
   const isAdmin = user?.role === "admin";
+  const isCustomer = user?.role === "customer";
 
   useEffect(() => {
     if (isPending) return;
@@ -205,6 +230,65 @@ function ServiceDetailsContent() {
     }
   };
 
+  const handleBooking = async (event) => {
+    event.preventDefault();
+
+    if (!appointmentDate || !appointmentTime) {
+      toast.error("Please select an appointment date and time.");
+      return;
+    }
+
+    if (appointmentDate < getDhakaDate()) {
+      toast.error("Please select a future appointment date.");
+      return;
+    }
+
+    try {
+      setBooking(true);
+
+      const token = await getToken();
+
+      await createAppointment(
+        {
+          serviceId: service._id,
+          appointmentDate,
+          appointmentTime: formatAppointmentTime(appointmentTime),
+        },
+        token
+      );
+
+      toast.success("Appointment request submitted successfully!");
+
+      setAppointmentDate("");
+      setAppointmentTime("");
+    } catch (error) {
+      toast.error(error.message || "Failed to submit appointment.");
+    } finally {
+      setBooking(false);
+    }
+  };
+
+  const getAvailableTimeOptions = () => {
+    if (!service) return [];
+
+    const options = [];
+    const duration = Number(service.duration);
+
+    for (let minutes = 11 * 60; minutes + duration <= 20 * 60; minutes += 30) {
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+
+      const value = `${String(hours).padStart(2, "0")}:${String(remainingMinutes).padStart(2, "0")}`;
+
+      options.push({
+        value,
+        label: formatAppointmentTime(value),
+      });
+    }
+
+    return options;
+  };
+
   return (
     <>
       <Navbar />
@@ -235,18 +319,13 @@ function ServiceDetailsContent() {
             </div>
           ) : error ? (
             <div className="rounded-2xl border border-pink-100 bg-white px-6 py-20 text-center shadow-sm">
-              <Sparkles
-                size={42}
-                className="mx-auto text-pink-400"
-              />
+              <Sparkles size={42} className="mx-auto text-pink-400" />
 
               <h1 className="mt-5 text-2xl font-bold text-[#321b2b]">
                 Service Not Found
               </h1>
 
-              <p className="mt-3 text-[#806b78]">
-                {error}
-              </p>
+              <p className="mt-3 text-[#806b78]">{error}</p>
 
               <Link
                 href="/services"
@@ -265,10 +344,7 @@ function ServiceDetailsContent() {
                     className="h-full max-h-[550px] w-full object-cover"
                   />
                 ) : (
-                  <Sparkles
-                    size={70}
-                    className="text-pink-400"
-                  />
+                  <Sparkles size={70} className="text-pink-400" />
                 )}
               </div>
 
@@ -287,9 +363,7 @@ function ServiceDetailsContent() {
 
                 <div className="mt-8 grid grid-cols-2 gap-4">
                   <div className="rounded-2xl bg-[#fffafd] p-5">
-                    <p className="text-sm text-[#806b78]">
-                      Service Price
-                    </p>
+                    <p className="text-sm text-[#806b78]">Service Price</p>
 
                     <p className="mt-2 text-2xl font-bold text-pink-600">
                       ৳{service.price}
@@ -297,9 +371,7 @@ function ServiceDetailsContent() {
                   </div>
 
                   <div className="rounded-2xl bg-[#fffafd] p-5">
-                    <p className="text-sm text-[#806b78]">
-                      Duration
-                    </p>
+                    <p className="text-sm text-[#806b78]">Duration</p>
 
                     <p className="mt-2 flex items-center gap-2 text-xl font-bold text-[#321b2b]">
                       <Clock size={20} />
@@ -333,10 +405,7 @@ function ServiceDetailsContent() {
                         className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {deactivating ? (
-                          <LoaderCircle
-                            size={18}
-                            className="animate-spin"
-                          />
+                          <LoaderCircle size={18} className="animate-spin" />
                         ) : (
                           <Power size={18} />
                         )}
@@ -347,17 +416,113 @@ function ServiceDetailsContent() {
                       </button>
                     </div>
                   </div>
-                ) : (
-                  <div className="mt-8 rounded-2xl border border-pink-100 bg-[#fffafd] p-5">
-                    <p className="font-semibold text-[#321b2b]">
-                      Ready to book this service?
-                    </p>
+                ) : isCustomer ? (
+                  <div className="mt-8 rounded-2xl border border-pink-100 bg-[#fffafd] p-5 sm:p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-xl bg-pink-100 p-3 text-pink-600">
+                        <CalendarCheck size={23} />
+                      </div>
 
-                    <p className="mt-2 text-sm leading-6 text-[#806b78]">
-                      Appointment booking will be available here soon.
-                    </p>
+                      <div>
+                        <h2 className="text-lg font-bold text-[#321b2b]">
+                          Book an Appointment
+                        </h2>
+
+                        <p className="mt-1 text-sm text-[#806b78]">
+                          Choose your preferred date and time.
+                        </p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleBooking} className="mt-6 space-y-5">
+                      <div>
+                        <label className="mb-2 block text-sm font-semibold text-[#49313f]">
+                          Appointment Date
+                        </label>
+
+                        <div className="relative">
+                          <CalendarDays
+                            size={18}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 text-pink-500"
+                          />
+
+                          <input
+                            type="date"
+                            value={appointmentDate}
+                            onChange={(event) =>
+                              setAppointmentDate(event.target.value)
+                            }
+                            min={getDhakaDate()}
+                            required
+                            className="w-full rounded-xl border border-pink-100 bg-white px-4 py-3 pl-11 text-[#49313f] outline-none focus:border-pink-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-semibold text-[#49313f]">
+                          Appointment Time
+                        </label>
+
+                        <select
+                          value={appointmentTime}
+                          onChange={(event) =>
+                            setAppointmentTime(event.target.value)
+                          }
+                          required
+                          className="w-full rounded-xl border border-pink-100 bg-white px-4 py-3 text-[#49313f] outline-none focus:border-pink-500"
+                        >
+                          <option value="">Select a time</option>
+
+                          {getAvailableTimeOptions().map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="rounded-xl bg-pink-50 p-4">
+                        <p className="text-sm font-semibold text-[#49313f]">
+                          Salon Opening Hours
+                        </p>
+
+                        <p className="mt-1 text-sm text-[#806b78]">
+                          Every day, 11:00 AM – 8:00 PM
+                        </p>
+
+                        <p className="mt-2 text-xs leading-5 text-[#806b78]">
+                          Available times are shown in 30-minute intervals. Your selected time will be checked against existing appointments.
+                        </p>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={
+                          booking ||
+                          !appointmentDate ||
+                          !appointmentTime
+                        }
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-pink-600 px-5 py-3.5 font-semibold text-white transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {booking ? (
+                          <>
+                            <LoaderCircle
+                              size={19}
+                              className="animate-spin"
+                            />
+                            Submitting Request...
+                          </>
+                        ) : (
+                          <>
+                            <CalendarCheck size={19} />
+                            Request Appointment
+                          </>
+                        )}
+                      </button>
+                    </form>
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
           ) : null}
@@ -499,10 +664,7 @@ function ServiceDetailsContent() {
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-pink-600 px-5 py-3 font-semibold text-white transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving ? (
-                    <LoaderCircle
-                      size={18}
-                      className="animate-spin"
-                    />
+                    <LoaderCircle size={18} className="animate-spin" />
                   ) : (
                     <Save size={18} />
                   )}
