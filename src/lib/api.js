@@ -159,3 +159,26 @@ export const cancelMyAppointment = async (id, token) => {
     method: "PATCH",
   });
 };
+
+export const getAllAppointments = async (token, status = "all") => {
+  const query = new URLSearchParams({ status }).toString();
+
+  return authenticatedRequest(
+    `/api/appointments/admin/all?${query}`,
+    token
+  );
+};
+
+export const updateAppointmentStatus = async (id, status, token) => {
+  return authenticatedRequest(
+    `/api/appointments/admin/${id}/status`,
+    token,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status }),
+    }
+  );
+};
