@@ -182,3 +182,36 @@ export const updateAppointmentStatus = async (id, status, token) => {
     }
   );
 };
+
+export const getAllCustomers = async (token, search = "") => {
+  const query = new URLSearchParams();
+
+  if (search.trim()) {
+    query.set("search", search.trim());
+  }
+
+  const queryString = query.toString();
+
+  return authenticatedRequest(
+    `/api/customers${queryString ? `?${queryString}` : ""}`,
+    token
+  );
+};
+
+export const updateCustomerBlockStatus = async (
+  id,
+  isBlocked,
+  token
+) => {
+  return authenticatedRequest(
+    `/api/customers/${id}/block`,
+    token,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ isBlocked }),
+    }
+  );
+};
