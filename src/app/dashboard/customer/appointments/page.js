@@ -9,8 +9,6 @@ import {
   Clock,
   Scissors,
   CreditCard,
-  CheckCircle2,
-  XCircle,
   AlertCircle,
   RefreshCw,
   LoaderCircle,
@@ -24,6 +22,7 @@ import { authClient } from "@/lib/auth-client";
 import {
   getMyAppointments,
   cancelMyAppointment,
+  createCheckoutSession,
 } from "@/lib/api";
 
 const filters = [
@@ -74,6 +73,7 @@ export default function MyAppointmentsPage() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState(null);
+  const [payingId, setPayingId] = useState(null);
   const [error, setError] = useState("");
 
   const loadAppointments = useCallback(async () => {
@@ -85,7 +85,9 @@ export default function MyAppointmentsPage() {
       const token = tokenResult?.data?.token;
 
       if (!token) {
-        throw new Error("Authentication token is missing. Please sign in again.");
+        throw new Error(
+          "Authentication token is missing. Please sign in again."
+        );
       }
 
       const result = await getMyAppointments(token);
@@ -122,6 +124,24 @@ export default function MyAppointmentsPage() {
     loadAppointments();
   }, [session, isPending, router, loadAppointments]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get("payment");
+
+    if (paymentStatus === "success") {
+      toast.success(
+        "Payment submitted. Your payment status will update after confirmation."
+      );
+      loadAppointments();
+      router.replace("/dashboard/customer/appointments");
+    }
+
+    if (paymentStatus === "cancelled") {
+      toast("Payment was cancelled. Your appointment is still unpaid.");
+      router.replace("/dashboard/customer/appointments");
+    }
+  }, [loadAppointments, router]);
+
   const handleCancel = async (appointmentId) => {
     const confirmed = window.confirm(
       "Are you sure you want to cancel this appointment?"
@@ -136,7 +156,9 @@ export default function MyAppointmentsPage() {
       const token = tokenResult?.data?.token;
 
       if (!token) {
-        throw new Error("Authentication token is missing. Please sign in again.");
+        throw new Error(
+          "Authentication token is missing. Please sign in again."
+        );
       }
 
       const result = await cancelMyAppointment(appointmentId, token);
@@ -150,6 +172,34 @@ export default function MyAppointmentsPage() {
       toast.error(err.message || "Failed to cancel appointment.");
     } finally {
       setCancellingId(null);
+    }
+  };
+
+  const handlePayNow = async (appointmentId) => {
+    try {
+      setPayingId(appointmentId);
+
+      const tokenResult = await authClient.token();
+      const token = tokenResult?.data?.token;
+
+      if (!token) {
+        throw new Error(
+          "Authentication token is missing. Please sign in again."
+        );
+      }
+
+      const result = await createCheckoutSession(appointmentId, token);
+      const checkoutUrl =
+        result.url || result.checkoutUrl || result.session?.url;
+
+      if (!checkoutUrl) {
+        throw new Error("Unable to create the payment session.");
+      }
+
+      window.location.assign(checkoutUrl);
+    } catch (err) {
+      toast.error(err.message || "Failed to start payment.");
+      setPayingId(null);
     }
   };
 
@@ -308,83 +358,109 @@ export default function MyAppointmentsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredAppointments.map((appointment) => (
-                <article
-                  key={appointment._id}
-                  className="rounded-2xl border border-pink-100 bg-white p-5 shadow-sm transition hover:shadow-md sm:p-6"
-                >
-                  <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-lg font-bold text-[#442b35]">
-                          {appointment.serviceName}
-                        </h3>
+              {filteredAppointments.map((appointment) => {
+                const canPay =
+                  ["confirmed", "completed"].includes(appointment.status) &&
+                  appointment.paymentStatus === "unpaid";
+
+                return (
+                  <article
+                    key={appointment._id}
+                    className="rounded-2xl border border-pink-100 bg-white p-5 shadow-sm transition hover:shadow-md sm:p-6"
+                  >
+                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <h3 className="text-lg font-bold text-[#442b35]">
+                            {appointment.serviceName}
+                          </h3>
+
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${getStatusStyle(appointment.status)}`}
+                          >
+                            {appointment.status}
+                          </span>
+                        </div>
+
+                        <div className="mt-4 grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
+                          <p className="flex items-center gap-2">
+                            <CalendarDays size={17} className="text-[#c75b79]" />
+                            {formatDate(appointment.appointmentDate)}
+                          </p>
+
+                          <p className="flex items-center gap-2">
+                            <Clock size={17} className="text-[#c75b79]" />
+                            {appointment.appointmentTime}
+                          </p>
+
+                          <p className="flex items-center gap-2">
+                            <Scissors size={17} className="text-[#c75b79]" />
+                            {appointment.duration} minutes
+                          </p>
+
+                          <p className="flex items-center gap-2">
+                            <CreditCard size={17} className="text-[#c75b79]" />
+                            {formatPrice(appointment.price)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2 sm:items-end">
+                        <span className="text-xs font-medium text-gray-500">
+                          Payment Status
+                        </span>
 
                         <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${getStatusStyle(appointment.status)}`}
+                          className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${getPaymentStyle(appointment.paymentStatus)}`}
                         >
-                          {appointment.status}
+                          {appointment.paymentStatus}
                         </span>
-                      </div>
 
-                      <div className="mt-4 grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
-                        <p className="flex items-center gap-2">
-                          <CalendarDays size={17} className="text-[#c75b79]" />
-                          {formatDate(appointment.appointmentDate)}
-                        </p>
+                        {canPay && (
+                          <button
+                            onClick={() => handlePayNow(appointment._id)}
+                            disabled={payingId === appointment._id}
+                            className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-[#c75b79] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#ad4967] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {payingId === appointment._id ? (
+                              <LoaderCircle
+                                size={16}
+                                className="animate-spin"
+                              />
+                            ) : (
+                              <CreditCard size={16} />
+                            )}
+                            {payingId === appointment._id
+                              ? "Preparing Payment..."
+                              : "Pay Now"}
+                          </button>
+                        )}
 
-                        <p className="flex items-center gap-2">
-                          <Clock size={17} className="text-[#c75b79]" />
-                          {appointment.appointmentTime}
-                        </p>
-
-                        <p className="flex items-center gap-2">
-                          <Scissors size={17} className="text-[#c75b79]" />
-                          {appointment.duration} minutes
-                        </p>
-
-                        <p className="flex items-center gap-2">
-                          <CreditCard size={17} className="text-[#c75b79]" />
-                          {formatPrice(appointment.price)}
-                        </p>
+                        {appointment.status === "pending" && (
+                          <button
+                            onClick={() => handleCancel(appointment._id)}
+                            disabled={cancellingId === appointment._id}
+                            className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {cancellingId === appointment._id ? (
+                              <LoaderCircle size={15} className="animate-spin" />
+                            ) : (
+                              <Ban size={15} />
+                            )}
+                            Cancel Appointment
+                          </button>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-2 sm:items-end">
-                      <span className="text-xs font-medium text-gray-500">
-                        Payment Status
-                      </span>
-
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${getPaymentStyle(appointment.paymentStatus)}`}
-                      >
-                        {appointment.paymentStatus}
-                      </span>
-
-                      {appointment.status === "pending" && (
-                        <button
-                          onClick={() => handleCancel(appointment._id)}
-                          disabled={cancellingId === appointment._id}
-                          className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {cancellingId === appointment._id ? (
-                            <LoaderCircle size={15} className="animate-spin" />
-                          ) : (
-                            <Ban size={15} />
-                          )}
-                          Cancel Appointment
-                        </button>
-                      )}
+                    <div className="mt-5 border-t border-pink-50 pt-4">
+                      <p className="text-xs text-gray-400">
+                        Appointment ID: {appointment._id}
+                      </p>
                     </div>
-                  </div>
-
-                  <div className="mt-5 border-t border-pink-50 pt-4">
-                    <p className="text-xs text-gray-400">
-                      Appointment ID: {appointment._id}
-                    </p>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           )}
         </div>

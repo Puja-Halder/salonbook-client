@@ -215,3 +215,17 @@ export const updateCustomerBlockStatus = async (
     }
   );
 };
+
+export const createCheckoutSession = async (appointmentId, token) => {
+  return authenticatedRequest(
+    "/api/payments/create-checkout-session",
+    token,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ appointmentId }),
+    }
+  );
+};
