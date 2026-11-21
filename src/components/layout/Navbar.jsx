@@ -11,6 +11,7 @@ import {
   CircleUserRound,
   Menu,
   X,
+  Store,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { authClient } from "@/lib/auth-client";
@@ -20,10 +21,12 @@ const navLinks = [
   { label: "Services", href: "/#services" },
   { label: "About", href: "/#about" },
   { label: "Contact", href: "/#contact" },
+  { label: "Salon Details", href: "/salon-details" },
 ];
 
 export default function Navbar() {
   const router = useRouter();
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -78,7 +81,7 @@ export default function Navbar() {
             Salon<span className="text-pink-600">Book.</span>
           </Link>
 
-          <div className="hidden items-center gap-8 md:flex">
+          <div className="hidden items-center gap-6 lg:flex">
             {navLinks.map((link) => (
               <Link
                 key={link.label}
@@ -148,6 +151,9 @@ export default function Navbar() {
                         <p className="mt-1 truncate text-xs text-[#806b78]">
                           {user.email}
                         </p>
+                        <p className="mt-1 text-xs font-semibold capitalize text-pink-600">
+                          {user.role || "Customer"}
+                        </p>
                       </div>
                     </div>
 
@@ -210,7 +216,7 @@ export default function Navbar() {
               }}
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileMenuOpen}
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-[#321b2b] transition hover:bg-pink-50 md:hidden"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-[#321b2b] transition hover:bg-pink-50 lg:hidden"
             >
               {mobileMenuOpen ? <X size={25} /> : <Menu size={25} />}
             </button>
@@ -218,7 +224,7 @@ export default function Navbar() {
         </div>
 
         {mobileMenuOpen && (
-          <div className="mt-4 border-t border-pink-100 pt-4 md:hidden">
+          <div className="mt-4 border-t border-pink-100 pt-4 lg:hidden">
             <div className="flex flex-col gap-1">
               {navLinks.map((link) => (
                 <Link
@@ -231,6 +237,34 @@ export default function Navbar() {
                 </Link>
               ))}
             </div>
+
+            {mounted && !isPending && user && (
+              <div className="mt-3 flex flex-col gap-1 border-t border-pink-100 pt-3">
+                <Link
+                  href="/account"
+                  onClick={closeMobileMenu}
+                  className="rounded-xl px-4 py-3 text-sm font-medium text-[#765b69] transition hover:bg-pink-50 hover:text-pink-600"
+                >
+                  My Account
+                </Link>
+
+                <Link
+                  href={dashboardLink}
+                  onClick={closeMobileMenu}
+                  className="rounded-xl px-4 py-3 text-sm font-medium text-[#765b69] transition hover:bg-pink-50 hover:text-pink-600"
+                >
+                  Dashboard
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="rounded-xl px-4 py-3 text-left text-sm font-medium text-red-500 transition hover:bg-red-50"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
 
             {mounted && !isPending && !user && (
               <div className="mt-3 flex flex-col gap-2 border-t border-pink-100 pt-4">
