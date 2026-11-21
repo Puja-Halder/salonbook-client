@@ -84,6 +84,14 @@ export default function CustomerDashboard() {
     }
 
     if (session.user.isBlocked) {
+      toast.error(
+        "Your account has been blocked by the administrator. Please contact the salon for assistance.",
+        {
+          id: "account-blocked",
+          duration: 5000,
+        }
+      );
+
       router.replace("/");
       return;
     }

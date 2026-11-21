@@ -3,12 +3,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Search, Clock, Sparkles } from "lucide-react";
+import toast from "react-hot-toast";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { authClient } from "@/lib/auth-client";
 import { getServices, getServiceCategories } from "@/lib/api";
 
 export default function ServicesPage() {
+  const router = useRouter();
+  const { data: session, isPending } = authClient.useSession();
+
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,6 +23,30 @@ export default function ServicesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [categoryInitialized, setCategoryInitialized] = useState(false);
+
+  const handleViewDetails = (event, serviceId) => {
+    console.log("Services page session:", session);
+    console.log("Blocked status:", session?.user?.isBlocked);
+
+    if (isPending) {
+      event.preventDefault();
+      return;
+    }
+
+    if (session?.user?.isBlocked) {
+      event.preventDefault();
+
+      toast.error(
+        "Your account has been blocked by the administrator. Please contact the salon for assistance.",
+        {
+          id: "blocked-service-details",
+          duration: 5000,
+        }
+      );
+
+      return;
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -246,6 +276,9 @@ export default function ServicesPage() {
 
                     <Link
                       href={`/services/${service._id}`}
+                      onClick={(event) =>
+                        handleViewDetails(event, service._id)
+                      }
                       className="mt-6 block rounded-full bg-pink-600 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-pink-700"
                     >
                       View Details
