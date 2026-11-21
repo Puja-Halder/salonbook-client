@@ -1,36 +1,109 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# SalonBook
 
-## Getting Started
+SalonBook is a salon appointment booking platform where customers can explore beauty services, view service details, request appointments, and manage their bookings. Administrators can manage salon services, handle appointment requests, manage customers, and monitor payment transactions.
 
-First, run the development server:
+## Features
+
+### Customer Features
+- Browse and explore salon services.
+- Search and filter services by category.
+- View service details, pricing, and duration.
+- Create appointment requests.
+- View appointment status and history.
+- Cancel pending appointments.
+- Complete payment for confirmed appointments.
+- Manage profile information and profile image.
+- Sign in using email/password or Google.
+- View salon information and details.
+
+### Admin Features
+- Admin dashboard.
+- Add, update, deactivate, reactivate, and delete services.
+- Upload service images.
+- View and manage appointment requests.
+- Confirm or cancel appointments.
+- Manage registered customers.
+- Block customers when necessary.
+- View payment transactions.
+
+### General Features
+- Role-based authentication and authorization.
+- Responsive design for desktop and mobile.
+- Dynamic service categories.
+- Featured salon services.
+- User-friendly notifications.
+- Protected customer and admin pages.
+
+## Technology Stack
+
+**Frontend**
+- Next.js
+- React
+- JavaScript
+- Tailwind CSS
+- Better Auth
+- Lucide React
+- React Hot Toast
+
+**Backend**
+- Node.js
+- Express.js
+- MongoDB
+- Better Auth
+
+**Other Services**
+- ImgBB for image hosting
+- Google OAuth for social authentication
+
+## Installation and Setup
+
+### Prerequisites
+- Node.js and npm
+- MongoDB database
+- Git
+
+### 1. Clone the repository
+
+```bash
+git clone YOUR_CLIENT_REPOSITORY_URL
+cd salonbook-client
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure environment variables
+
+Create a `.env.local` file in the project root and configure the required environment variables.
+
+Do not publish your secret keys or database credentials.
+
+### 4. Start the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Backend Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The backend is maintained in a separate repository.
 
-## Learn More
+Clone the server repository, install its dependencies, configure its environment variables, and start the Express server according to its README instructions.
 
-To learn more about Next.js, take a look at the following resources:
+## Project Repositories
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Client Repository:** Add your GitHub client repository URL.
+- **Server Repository:** Add your GitHub server repository URL.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Live Demo
 
-## Deploy on Vercel
+Coming soon.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Notes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is developed as a full-stack salon appointment booking application.
