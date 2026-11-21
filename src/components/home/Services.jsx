@@ -8,6 +8,29 @@ import { toast } from "react-hot-toast";
 import { authClient } from "@/lib/auth-client";
 import { getServices } from "@/lib/api";
 
+const formatDuration = (duration) => {
+  const totalMinutes = Number(duration);
+
+  if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) {
+    return "Duration unavailable";
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  const parts = [];
+
+  if (hours > 0) {
+    parts.push(`${hours} ${hours === 1 ? "hour" : "hours"}`);
+  }
+
+  if (minutes > 0) {
+    parts.push(`${minutes} ${minutes === 1 ? "minute" : "minutes"}`);
+  }
+
+  return parts.join(" ");
+};
+
 export default function Services() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -155,7 +178,7 @@ export default function Services() {
 
                     <div className="flex items-center gap-1 text-sm text-[#806b78]">
                       <Clock size={16} />
-                      {service.duration} min
+                      {formatDuration(service.duration)}
                     </div>
                   </div>
 
