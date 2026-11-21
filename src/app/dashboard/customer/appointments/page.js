@@ -14,6 +14,8 @@ import {
   LoaderCircle,
   ArrowLeft,
   Ban,
+  X,
+  CheckCircle2,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Navbar from "@/components/layout/Navbar";
@@ -22,7 +24,7 @@ import { authClient } from "@/lib/auth-client";
 import {
   getMyAppointments,
   cancelMyAppointment,
-  createCheckoutSession,
+  confirmDemoPayment,
 } from "@/lib/api";
 
 const filters = [
@@ -74,6 +76,7 @@ export default function MyAppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState(null);
   const [payingId, setPayingId] = useState(null);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [error, setError] = useState("");
 
   const loadAppointments = useCallback(async () => {
@@ -124,24 +127,6 @@ export default function MyAppointmentsPage() {
     loadAppointments();
   }, [session, isPending, router, loadAppointments]);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const paymentStatus = params.get("payment");
-
-    if (paymentStatus === "success") {
-      toast.success(
-        "Payment submitted. Your payment status will update after confirmation."
-      );
-      loadAppointments();
-      router.replace("/dashboard/customer/appointments");
-    }
-
-    if (paymentStatus === "cancelled") {
-      toast("Payment was cancelled. Your appointment is still unpaid.");
-      router.replace("/dashboard/customer/appointments");
-    }
-  }, [loadAppointments, router]);
-
   const handleCancel = async (appointmentId) => {
     const confirmed = window.confirm(
       "Are you sure you want to cancel this appointment?"
@@ -175,7 +160,11 @@ export default function MyAppointmentsPage() {
     }
   };
 
-  const handlePayNow = async (appointmentId) => {
+  const handleDemoPayment = async () => {
+    if (!selectedAppointment) return;
+
+    const appointmentId = selectedAppointment._id;
+
     try {
       setPayingId(appointmentId);
 
@@ -188,17 +177,18 @@ export default function MyAppointmentsPage() {
         );
       }
 
-      const result = await createCheckoutSession(appointmentId, token);
-      const checkoutUrl =
-        result.url || result.checkoutUrl || result.session?.url;
+      const result = await confirmDemoPayment(appointmentId, token);
 
-      if (!checkoutUrl) {
-        throw new Error("Unable to create the payment session.");
-      }
+      toast.success(
+        result.message || "Demo payment completed successfully."
+      );
 
-      window.location.assign(checkoutUrl);
+      setSelectedAppointment(null);
+
+      await loadAppointments();
     } catch (err) {
-      toast.error(err.message || "Failed to start payment.");
+      toast.error(err.message || "Demo payment failed.");
+    } finally {
       setPayingId(null);
     }
   };
@@ -418,21 +408,11 @@ export default function MyAppointmentsPage() {
 
                         {canPay && (
                           <button
-                            onClick={() => handlePayNow(appointment._id)}
-                            disabled={payingId === appointment._id}
-                            className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-[#c75b79] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#ad4967] disabled:cursor-not-allowed disabled:opacity-50"
+                            onClick={() => setSelectedAppointment(appointment)}
+                            className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-[#c75b79] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#ad4967]"
                           >
-                            {payingId === appointment._id ? (
-                              <LoaderCircle
-                                size={16}
-                                className="animate-spin"
-                              />
-                            ) : (
-                              <CreditCard size={16} />
-                            )}
-                            {payingId === appointment._id
-                              ? "Preparing Payment..."
-                              : "Pay Now"}
+                            <CreditCard size={16} />
+                            Pay Now
                           </button>
                         )}
 
@@ -465,6 +445,102 @@ export default function MyAppointmentsPage() {
           )}
         </div>
       </main>
+
+      {selectedAppointment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="payment-title"
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-pink-50 text-[#c75b79]">
+                <CreditCard size={24} />
+              </div>
+
+              <button
+                onClick={() => setSelectedAppointment(null)}
+                disabled={payingId !== null}
+                className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50"
+                aria-label="Close payment confirmation"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <h2
+              id="payment-title"
+              className="mt-5 text-2xl font-bold text-[#442b35]"
+            >
+              Confirm Demo Payment
+            </h2>
+
+            <p className="mt-2 text-sm leading-6 text-gray-600">
+              This is a demonstration payment. No real money will be charged.
+            </p>
+
+            <div className="mt-5 rounded-xl border border-pink-100 bg-[#fff9fa] p-4">
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="text-gray-500">Service</span>
+                <span className="text-right font-semibold text-[#442b35]">
+                  {selectedAppointment.serviceName}
+                </span>
+              </div>
+
+              <div className="mt-3 flex justify-between gap-3 text-sm">
+                <span className="text-gray-500">Appointment date</span>
+                <span className="text-right font-semibold text-[#442b35]">
+                  {formatDate(selectedAppointment.appointmentDate)}
+                </span>
+              </div>
+
+              <div className="mt-3 flex justify-between gap-3 text-sm">
+                <span className="text-gray-500">Amount</span>
+                <span className="text-right text-lg font-bold text-[#c75b79]">
+                  {formatPrice(selectedAppointment.price)}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-start gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700">
+              <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
+              <p>
+                Clicking confirm will mark this appointment as paid in the
+                SalonBook demo system.
+              </p>
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row">
+              <button
+                onClick={() => setSelectedAppointment(null)}
+                disabled={payingId !== null}
+                className="flex-1 rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleDemoPayment}
+                disabled={payingId !== null}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#c75b79] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#ad4967] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {payingId !== null ? (
+                  <>
+                    <LoaderCircle size={17} className="animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={17} />
+                    Confirm Demo Payment
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </>

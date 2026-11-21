@@ -216,9 +216,9 @@ export const updateCustomerBlockStatus = async (
   );
 };
 
-export const createCheckoutSession = async (appointmentId, token) => {
+export const confirmDemoPayment = async (appointmentId, token) => {
   return authenticatedRequest(
-    "/api/payments/create-checkout-session",
+    "/api/payments/confirm-demo-payment",
     token,
     {
       method: "POST",
