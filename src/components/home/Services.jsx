@@ -4,12 +4,35 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Clock, Sparkles, ArrowRight } from "lucide-react";
+import { toast } from "react-hot-toast";
+import { authClient } from "@/lib/auth-client";
 import { getServices } from "@/lib/api";
 
 export default function Services() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const { data: session, isPending } = authClient.useSession();
+
+  const handleViewDetails = (event) => {
+    if (isPending) {
+      event.preventDefault();
+      return;
+    }
+
+    if (session?.user?.isBlocked) {
+      event.preventDefault();
+
+      toast.error(
+        "Your account has been blocked by the administrator. Please contact the salon for assistance.",
+        {
+          id: "blocked-service-details",
+          duration: 5000,
+        }
+      );
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -138,6 +161,7 @@ export default function Services() {
 
                   <Link
                     href={`/services/${service._id}`}
+                    onClick={handleViewDetails}
                     className="mt-6 block rounded-full border border-pink-300 px-5 py-3 text-center text-sm font-semibold text-pink-700 transition hover:bg-pink-600 hover:text-white"
                   >
                     View Details
