@@ -17,6 +17,25 @@ export default function Footer() {
             Your beauty, your time. Discover professional salon services
             and enjoy a convenient appointment booking experience.
           </p>
+
+          <div className="mt-5 flex gap-4 text-sm text-pink-100/70">
+            <a
+              href="https://www.facebook.com/your-salon-page"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition hover:text-pink-300"
+            >
+              Facebook
+            </a>
+            <a
+              href="https://www.instagram.com/your-salon-page"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition hover:text-pink-300"
+            >
+              Instagram
+            </a>
+          </div>
         </div>
 
         <div>
@@ -26,31 +45,53 @@ export default function Footer() {
             <Link href="/" className="transition hover:text-pink-300">
               Home
             </Link>
-
             <Link href="/#services" className="transition hover:text-pink-300">
               Services
             </Link>
-
             <Link href="/#about" className="transition hover:text-pink-300">
               About Us
             </Link>
-
             <Link href="/#contact" className="transition hover:text-pink-300">
               Contact
             </Link>
           </div>
         </div>
 
-        <div>
-          <h3 className="font-semibold">Our Services</h3>
+        
+<div>
+  <h3 className="font-semibold">Our Services</h3>
 
-          <div className="mt-5 flex flex-col gap-3 text-sm text-pink-100/70">
-            <span>Hair Styling</span>
-            <span>Facial & Skincare</span>
-            <span>Manicure & Pedicure</span>
-            <span>Bridal Makeup</span>
-          </div>
-        </div>
+  <div className="mt-5 flex flex-col gap-3 text-sm text-pink-100/70">
+    <Link
+      href="/services?category=haircut-styling"
+      className="transition hover:text-pink-300"
+    >
+      Hair Styling
+    </Link>
+
+    <Link
+      href="/services?category=facial-skincare"
+      className="transition hover:text-pink-300"
+    >
+      Facial & Skincare
+    </Link>
+
+    <Link
+  href="/services?category=manicure-pedicure"
+  className="transition hover:text-pink-300"
+>
+  Manicure & Pedicure
+</Link>
+
+    <Link
+      href="/services?category=makeup"
+      className="transition hover:text-pink-300"
+    >
+      Bridal Makeup
+    </Link>
+  </div>
+</div>
+
 
         <div>
           <h3 className="font-semibold">Get in Touch</h3>
@@ -58,7 +99,17 @@ export default function Footer() {
           <div className="mt-5 flex flex-col gap-3 text-sm text-pink-100/70">
             <p>Email: info@salonbook.com</p>
             <p>Phone: +880 1XXXXXXXXX</p>
-            <p>Location: Bangladesh</p>
+            <p>
+              Address: Your salon's full address, Bangladesh
+            </p>
+          </div>
+
+          <div className="mt-6">
+            <h3 className="font-semibold">Opening Hours</h3>
+            <div className="mt-3 flex flex-col gap-2 text-sm text-pink-100/70">
+              <p>Saturday – Thursday: 10:00 AM – 9:00 PM</p>
+              <p>Friday: Closed</p>
+            </div>
           </div>
         </div>
       </div>
