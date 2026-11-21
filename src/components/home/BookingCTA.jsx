@@ -1,7 +1,19 @@
 
+"use client";
+
 import Link from "next/link";
+import { authClient } from "@/lib/auth-client";
 
 export default function BookingCTA() {
+  const { data: session, isPending } = authClient.useSession();
+  const user = session?.user;
+
+  const bookingLink = !user
+    ? "/signin"
+    : user.role === "admin"
+      ? "/dashboard/admin"
+      : "/services";
+
   return (
     <section className="bg-white px-6 py-20 lg:px-10">
       <div className="mx-auto max-w-7xl overflow-hidden rounded-3xl bg-[#321b2b] px-8 py-14 text-center sm:px-14 sm:py-16">
@@ -19,7 +31,13 @@ export default function BookingCTA() {
         </p>
 
         <Link
-          href="/signin"
+          href={bookingLink}
+          aria-disabled={isPending}
+          onClick={(event) => {
+            if (isPending) {
+              event.preventDefault();
+            }
+          }}
           className="mt-9 inline-flex rounded-full bg-pink-600 px-8 py-4 font-semibold text-white transition hover:-translate-y-1 hover:bg-pink-500"
         >
           Book Your Appointment →
