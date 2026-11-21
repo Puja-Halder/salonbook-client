@@ -34,7 +34,8 @@ const initialForm = {
   description: "",
   category: "",
   price: "",
-  duration: "",
+  durationHours: "0",
+  durationMinutes: "30",
   imageUrl: "",
 };
 
@@ -47,6 +48,38 @@ const categories = [
   "manicure-pedicure",
   "spa-massage",
 ];
+
+const calculateDuration = (hours, minutes) => {
+  return Number(hours) * 60 + Number(minutes);
+};
+
+const formatDuration = (totalMinutes) => {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours === 0) return `${minutes} minutes`;
+
+  if (minutes === 0) {
+    return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+  }
+
+  return `${hours} ${hours === 1 ? "hour" : "hours"} ${minutes} minutes`;
+};
+
+const isValidDuration = (hours, minutes) => {
+  const h = Number(hours);
+  const m = Number(minutes);
+  const total = calculateDuration(h, m);
+
+  return (
+    Number.isInteger(h) &&
+    Number.isInteger(m) &&
+    h >= 0 &&
+    m >= 0 &&
+    m <= 59 &&
+    total >= 5
+  );
+};
 
 export default function ManageServicesPage() {
   const router = useRouter();
@@ -62,27 +95,6 @@ export default function ManageServicesPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showForm, setShowForm] = useState(false);
-
-  useEffect(() => {
-    if (isPending) return;
-
-    if (!session?.user) {
-      router.replace("/signin");
-      return;
-    }
-
-    if (session.user.isBlocked) {
-      router.replace("/");
-      return;
-    }
-
-    if (session.user.role !== "admin") {
-      router.replace("/dashboard/customer");
-      return;
-    }
-
-    loadServices();
-  }, [session, isPending, router]);
 
   const getToken = async () => {
     const { data, error } = await authClient.token();
@@ -111,6 +123,27 @@ export default function ManageServicesPage() {
     }
   };
 
+  useEffect(() => {
+    if (isPending) return;
+
+    if (!session?.user) {
+      router.replace("/signin");
+      return;
+    }
+
+    if (session.user.isBlocked) {
+      router.replace("/");
+      return;
+    }
+
+    if (session.user.role !== "admin") {
+      router.replace("/dashboard/customer");
+      return;
+    }
+
+    loadServices();
+  }, [session, isPending, router]);
+
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -127,11 +160,13 @@ export default function ManageServicesPage() {
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       toast.error("Only JPEG, PNG, and WebP images are allowed.");
+      event.target.value = "";
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image size must be less than 5 MB.");
+      event.target.value = "";
       return;
     }
 
@@ -153,11 +188,16 @@ export default function ManageServicesPage() {
       return;
     }
 
+    const totalDuration = calculateDuration(
+      form.durationHours,
+      form.durationMinutes
+    );
+
     if (
       form.price === "" ||
+      !Number.isFinite(Number(form.price)) ||
       Number(form.price) < 0 ||
-      form.duration === "" ||
-      Number(form.duration) < 5
+      !isValidDuration(form.durationHours, form.durationMinutes)
     ) {
       toast.error("Enter a valid price and duration of at least 5 minutes.");
       return;
@@ -184,7 +224,7 @@ export default function ManageServicesPage() {
         description: form.description.trim(),
         category: form.category,
         price: Number(form.price),
-        duration: Number(form.duration),
+        duration: totalDuration,
         imageUrl,
       };
 
@@ -212,7 +252,10 @@ export default function ManageServicesPage() {
       description: service.description || "",
       category: service.category || "",
       price: String(service.price ?? ""),
-      duration: String(service.duration ?? ""),
+      durationHours: String(
+        Math.floor((service.duration || 0) / 60)
+      ),
+      durationMinutes: String((service.duration || 0) % 60),
       imageUrl: service.imageUrl || "",
     });
 
@@ -225,12 +268,6 @@ export default function ManageServicesPage() {
   };
 
   const handleDeactivate = async (id) => {
-    const confirmed = window.confirm(
-      "Deactivate this service? It will be hidden from customers but will remain in your database."
-    );
-
-    if (!confirmed) return false;
-
     try {
       const token = await getToken();
 
@@ -422,19 +459,47 @@ export default function ManageServicesPage() {
 
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-[#49313f]">
-                      Duration (minutes) *
+                      Duration *
                     </label>
 
-                    <input
-                      type="number"
-                      name="duration"
-                      value={form.duration}
-                      onChange={handleChange}
-                      required
-                      min="5"
-                      placeholder="30"
-                      className="w-full rounded-xl border border-pink-100 px-4 py-3 outline-none focus:border-pink-500"
-                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <input
+                          type="number"
+                          name="durationHours"
+                          value={form.durationHours}
+                          onChange={handleChange}
+                          required
+                          min="0"
+                          step="1"
+                          placeholder="Hours"
+                          className="w-full rounded-xl border border-pink-100 px-4 py-3 outline-none focus:border-pink-500"
+                        />
+
+                        <p className="mt-1 text-xs text-[#806b78]">
+                          Hours
+                        </p>
+                      </div>
+
+                      <div>
+                        <input
+                          type="number"
+                          name="durationMinutes"
+                          value={form.durationMinutes}
+                          onChange={handleChange}
+                          required
+                          min="0"
+                          max="59"
+                          step="1"
+                          placeholder="Minutes"
+                          className="w-full rounded-xl border border-pink-100 px-4 py-3 outline-none focus:border-pink-500"
+                        />
+
+                        <p className="mt-1 text-xs text-[#806b78]">
+                          Minutes (0–59)
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -633,7 +698,7 @@ export default function ManageServicesPage() {
                           </p>
 
                           <p className="text-xs text-[#806b78]">
-                            {service.duration} minutes
+                            {formatDuration(service.duration)}
                           </p>
                         </div>
 
@@ -765,7 +830,7 @@ export default function ManageServicesPage() {
                   <p className="text-sm text-[#806b78]">Duration</p>
 
                   <p className="mt-1 text-xl font-bold text-[#321b2b]">
-                    {selectedService.duration} minutes
+                    {formatDuration(selectedService.duration)}
                   </p>
                 </div>
               </div>
