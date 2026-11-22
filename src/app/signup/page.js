@@ -9,6 +9,9 @@ import toast from "react-hot-toast";
 import { authClient } from "@/lib/auth-client";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
 
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 export default function SignUpPage() {
   const router = useRouter();
 
@@ -52,13 +55,10 @@ export default function SignUpPage() {
         const formData = new FormData();
         formData.append("image", imageFile);
 
-        const uploadResponse = await fetch(
-          "http://localhost:5000/api/upload",
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
+        const uploadResponse = await fetch(`${API_URL}/api/upload`, {
+          method: "POST",
+          body: formData,
+        });
 
         const uploadResult = await uploadResponse.json();
 
@@ -86,7 +86,8 @@ export default function SignUpPage() {
       router.replace("/");
       router.refresh();
     } catch (error) {
-      toast.error("Something went wrong. Please try again.");
+      console.error("Signup error:", error);
+      toast.error(error.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -106,13 +107,9 @@ export default function SignUpPage() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label
-              htmlFor="name"
-              className="mb-2 block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="name" className="mb-2 block text-sm font-medium text-gray-700">
               Full Name
             </label>
-
             <input
               id="name"
               type="text"
@@ -125,13 +122,9 @@ export default function SignUpPage() {
           </div>
 
           <div>
-            <label
-              htmlFor="email"
-              className="mb-2 block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-700">
               Email Address
             </label>
-
             <input
               id="email"
               type="email"
@@ -144,13 +137,9 @@ export default function SignUpPage() {
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="mb-2 block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="password" className="mb-2 block text-sm font-medium text-gray-700">
               Password
             </label>
-
             <div className="relative">
               <input
                 id="password"
@@ -162,33 +151,24 @@ export default function SignUpPage() {
                 required
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 pr-12 outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-100"
               />
-
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 transition hover:text-pink-600"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? (
-                  <EyeOff size={20} />
-                ) : (
-                  <Eye size={20} />
-                )}
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
 
           <div>
-            <label
-              htmlFor="profileImage"
-              className="mb-2 block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="profileImage" className="mb-2 block text-sm font-medium text-gray-700">
               Profile Image
             </label>
 
             <div className="flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-3">
               <ImagePlus size={20} className="shrink-0 text-pink-600" />
-
               <input
                 id="profileImage"
                 type="file"
@@ -201,9 +181,7 @@ export default function SignUpPage() {
               />
             </div>
 
-            <p className="my-3 text-center text-sm text-gray-500">
-              OR
-            </p>
+            <p className="my-3 text-center text-sm text-gray-500">OR</p>
 
             <input
               type="url"
