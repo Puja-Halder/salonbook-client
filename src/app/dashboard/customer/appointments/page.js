@@ -16,6 +16,10 @@ import {
   Ban,
   X,
   CheckCircle2,
+  Eye,
+  ImageIcon,
+  Tag,
+  CalendarPlus,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Navbar from "@/components/layout/Navbar";
@@ -35,16 +39,34 @@ const filters = [
   "completed",
 ];
 
-const formatDate = (date) =>
-  new Date(date).toLocaleDateString("en-BD", {
+const formatDate = (date) => {
+  if (!date) return "Not available";
+
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Not available";
+  }
+
+  return parsedDate.toLocaleDateString("en-BD", {
     day: "numeric",
     month: "long",
     year: "numeric",
     timeZone: "Asia/Dhaka",
   });
+};
 
 const formatPrice = (price) =>
-  `৳${Number(price).toLocaleString("en-BD")}`;
+  `৳${Number(price || 0).toLocaleString("en-BD")}`;
+
+const formatCategory = (category) => {
+  if (!category) return "Not available";
+
+  return category
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
 
 const getStatusStyle = (status) => {
   const styles = {
@@ -77,6 +99,7 @@ export default function MyAppointmentsPage() {
   const [cancellingId, setCancellingId] = useState(null);
   const [payingId, setPayingId] = useState(null);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [detailsAppointment, setDetailsAppointment] = useState(null);
   const [error, setError] = useState("");
 
   const loadAppointments = useCallback(async () => {
@@ -350,16 +373,33 @@ export default function MyAppointmentsPage() {
             <div className="space-y-4">
               {filteredAppointments.map((appointment) => {
                 const canPay =
-                  ["confirmed", "completed"].includes(appointment.status) &&
+                  appointment.status === "confirmed" &&
                   appointment.paymentStatus === "unpaid";
+
+                const service = appointment.serviceId;
 
                 return (
                   <article
                     key={appointment._id}
-                    className="rounded-2xl border border-pink-100 bg-white p-5 shadow-sm transition hover:shadow-md sm:p-6"
+                    className="overflow-hidden rounded-2xl border border-pink-100 bg-white p-5 shadow-sm transition hover:shadow-md sm:p-6"
                   >
-                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-                      <div>
+                    <div className="flex flex-col gap-5 sm:flex-row">
+                      <div className="h-36 w-full shrink-0 overflow-hidden rounded-xl bg-pink-50 sm:w-40">
+                        {service?.imageUrl ? (
+                          <img
+                            src={service.imageUrl}
+                            alt={appointment.serviceName}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full flex-col items-center justify-center gap-2 text-[#d99aab]">
+                            <ImageIcon size={32} />
+                            <span className="text-xs">No image available</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-3">
                           <h3 className="text-lg font-bold text-[#442b35]">
                             {appointment.serviceName}
@@ -372,44 +412,72 @@ export default function MyAppointmentsPage() {
                           </span>
                         </div>
 
+                        <p className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                          <Tag size={15} className="text-[#c75b79]" />
+                          {formatCategory(service?.category)}
+                        </p>
+
                         <div className="mt-4 grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
                           <p className="flex items-center gap-2">
-                            <CalendarDays size={17} className="text-[#c75b79]" />
+                            <CalendarDays size={17} className="shrink-0 text-[#c75b79]" />
                             {formatDate(appointment.appointmentDate)}
                           </p>
 
                           <p className="flex items-center gap-2">
-                            <Clock size={17} className="text-[#c75b79]" />
+                            <Clock size={17} className="shrink-0 text-[#c75b79]" />
                             {appointment.appointmentTime}
                           </p>
 
                           <p className="flex items-center gap-2">
-                            <Scissors size={17} className="text-[#c75b79]" />
+                            <Scissors size={17} className="shrink-0 text-[#c75b79]" />
                             {appointment.duration} minutes
                           </p>
 
                           <p className="flex items-center gap-2">
-                            <CreditCard size={17} className="text-[#c75b79]" />
+                            <CreditCard size={17} className="shrink-0 text-[#c75b79]" />
                             {formatPrice(appointment.price)}
                           </p>
                         </div>
+
+                        <div className="mt-4 flex flex-wrap items-center gap-3">
+                          <span className="text-xs font-medium text-gray-500">
+                            Payment:
+                          </span>
+
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${getPaymentStyle(appointment.paymentStatus)}`}
+                          >
+                            {appointment.paymentStatus}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 flex flex-col justify-between gap-4 border-t border-pink-50 pt-4 sm:flex-row sm:items-center">
+                      <div>
+                        <p className="flex items-center gap-2 text-xs text-gray-500">
+                          <CalendarPlus size={14} className="text-[#c75b79]" />
+                          Requested on: {formatDate(appointment.createdAt)}
+                        </p>
+
+                        <p className="mt-2 text-xs text-gray-400">
+                          Appointment ID: {appointment._id}
+                        </p>
                       </div>
 
-                      <div className="flex flex-col gap-2 sm:items-end">
-                        <span className="text-xs font-medium text-gray-500">
-                          Payment Status
-                        </span>
-
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${getPaymentStyle(appointment.paymentStatus)}`}
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => setDetailsAppointment(appointment)}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg border border-pink-200 px-3 py-2.5 text-sm font-medium text-[#c75b79] transition hover:bg-pink-50"
                         >
-                          {appointment.paymentStatus}
-                        </span>
+                          <Eye size={16} />
+                          View Details
+                        </button>
 
                         {canPay && (
                           <button
                             onClick={() => setSelectedAppointment(appointment)}
-                            className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-[#c75b79] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#ad4967]"
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#c75b79] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#ad4967]"
                           >
                             <CreditCard size={16} />
                             Pay Now
@@ -420,23 +488,17 @@ export default function MyAppointmentsPage() {
                           <button
                             onClick={() => handleCancel(appointment._id)}
                             disabled={cancellingId === appointment._id}
-                            className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {cancellingId === appointment._id ? (
                               <LoaderCircle size={15} className="animate-spin" />
                             ) : (
                               <Ban size={15} />
                             )}
-                            Cancel Appointment
+                            Cancel
                           </button>
                         )}
                       </div>
-                    </div>
-
-                    <div className="mt-5 border-t border-pink-50 pt-4">
-                      <p className="text-xs text-gray-400">
-                        Appointment ID: {appointment._id}
-                      </p>
                     </div>
                   </article>
                 );
@@ -445,6 +507,128 @@ export default function MyAppointmentsPage() {
           )}
         </div>
       </main>
+
+      {detailsAppointment && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 px-4 py-6"
+          onClick={() => setDetailsAppointment(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="appointment-details-title"
+            className="my-auto max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2
+                id="appointment-details-title"
+                className="text-xl font-bold text-[#442b35]"
+              >
+                Appointment Details
+              </h2>
+
+              <button
+                onClick={() => setDetailsAppointment(null)}
+                className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                aria-label="Close appointment details"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="mt-5 h-48 overflow-hidden rounded-xl bg-pink-50">
+              {detailsAppointment.serviceId?.imageUrl ? (
+                <img
+                  src={detailsAppointment.serviceId.imageUrl}
+                  alt={detailsAppointment.serviceName}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-[#d99aab]">
+                  <ImageIcon size={44} />
+                </div>
+              )}
+            </div>
+
+            <h3 className="mt-4 text-xl font-bold text-[#442b35]">
+              {detailsAppointment.serviceName}
+            </h3>
+
+            <p className="mt-1 text-sm text-gray-500">
+              {formatCategory(detailsAppointment.serviceId?.category)}
+            </p>
+
+            <div className="mt-5 space-y-4 rounded-xl border border-pink-100 bg-[#fff9fa] p-4">
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="text-gray-500">Appointment Date</span>
+                <span className="text-right font-semibold text-[#442b35]">
+                  {formatDate(detailsAppointment.appointmentDate)}
+                </span>
+              </div>
+
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="text-gray-500">Appointment Time</span>
+                <span className="text-right font-semibold text-[#442b35]">
+                  {detailsAppointment.appointmentTime}
+                </span>
+              </div>
+
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="text-gray-500">Duration</span>
+                <span className="text-right font-semibold text-[#442b35]">
+                  {detailsAppointment.duration} minutes
+                </span>
+              </div>
+
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="text-gray-500">Service Price</span>
+                <span className="text-right font-semibold text-[#442b35]">
+                  {formatPrice(detailsAppointment.price)}
+                </span>
+              </div>
+
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="text-gray-500">Appointment Status</span>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${getStatusStyle(detailsAppointment.status)}`}
+                >
+                  {detailsAppointment.status}
+                </span>
+              </div>
+
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="text-gray-500">Payment Status</span>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${getPaymentStyle(detailsAppointment.paymentStatus)}`}
+                >
+                  {detailsAppointment.paymentStatus}
+                </span>
+              </div>
+
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="text-gray-500">Request Date</span>
+                <span className="text-right font-semibold text-[#442b35]">
+                  {formatDate(detailsAppointment.createdAt)}
+                </span>
+              </div>
+
+              <div className="border-t border-pink-100 pt-3">
+                <p className="break-all text-xs text-gray-400">
+                  Appointment ID: {detailsAppointment._id}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setDetailsAppointment(null)}
+              className="mt-5 w-full rounded-xl bg-[#c75b79] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#ad4967]"
+            >
+              Close Details
+            </button>
+          </div>
+        </div>
+      )}
 
       {selectedAppointment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
