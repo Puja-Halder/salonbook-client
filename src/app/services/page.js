@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Clock, Sparkles } from "lucide-react";
+import { Search, Clock, Sparkles, ArrowLeft } from "lucide-react";
 import toast from "react-hot-toast";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -24,10 +24,15 @@ export default function ServicesPage() {
   const [error, setError] = useState("");
   const [categoryInitialized, setCategoryInitialized] = useState(false);
 
-  const handleViewDetails = (event, serviceId) => {
-    console.log("Services page session:", session);
-    console.log("Blocked status:", session?.user?.isBlocked);
+  const handleGoBack = () => {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/dashboard/customer");
+    }
+  };
 
+  const handleViewDetails = (event, serviceId) => {
     if (isPending) {
       event.preventDefault();
       return;
@@ -136,6 +141,15 @@ export default function ServicesPage() {
         </section>
 
         <section className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
+          <button
+            type="button"
+            onClick={handleGoBack}
+            className="mb-8 inline-flex items-center gap-2 rounded-xl border border-pink-200 bg-white px-5 py-2.5 text-sm font-semibold text-pink-700 transition hover:bg-pink-50"
+          >
+            <ArrowLeft size={17} />
+            Go Back
+          </button>
+
           <div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="relative md:col-span-1">
               <Search
