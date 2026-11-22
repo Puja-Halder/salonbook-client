@@ -97,8 +97,8 @@ Clone the server repository, install its dependencies, configure its environment
 
 ## Project Repositories
 
-- **Client Repository:** Add your GitHub client repository URL.
-- **Server Repository:** Add your GitHub server repository URL.
+- **Client Repository:** https://github.com/Puja-Halder/salonbook-client
+- **Server Repository:** https://github.com/Puja-Halder/salonbook-server
 
 ## Live Demo
 
