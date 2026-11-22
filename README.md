@@ -102,7 +102,7 @@ Clone the server repository, install its dependencies, configure its environment
 
 ## Live Demo
 
-Coming soon.
+https://salonbook-client-beta.vercel.app/
 
 ## Notes
 
