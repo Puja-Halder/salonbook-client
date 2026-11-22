@@ -7,11 +7,15 @@ import toast from "react-hot-toast";
 export default function GoogleSignInButton() {
   const handleGoogleSignIn = async () => {
     try {
-      await authClient.signIn.social({
+      const { error } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
-        errorCallbackURL: "/signin",
+        callbackURL: "https://salonbook-client-beta.vercel.app/",
+        errorCallbackURL: "https://salonbook-client-beta.vercel.app/signin",
       });
+
+      if (error) {
+        toast.error(error.message || "Google sign-in failed");
+      }
     } catch (error) {
       toast.error(error.message || "Google sign-in failed");
     }
