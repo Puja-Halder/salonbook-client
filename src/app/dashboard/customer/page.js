@@ -15,6 +15,7 @@ import {
   RefreshCw,
   LoaderCircle,
   CalendarCheck,
+  ArrowLeft,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Navbar from "@/components/layout/Navbar";
@@ -53,6 +54,14 @@ export default function CustomerDashboard() {
   const [loadingAppointments, setLoadingAppointments] = useState(true);
   const [cancellingId, setCancellingId] = useState(null);
   const [error, setError] = useState("");
+
+  const handleGoBack = () => {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  };
 
   const loadAppointments = useCallback(async () => {
     try {
@@ -211,6 +220,14 @@ export default function CustomerDashboard() {
       <main className="min-h-screen bg-[#fffafd] px-6 py-12">
         <div className="mx-auto max-w-7xl">
           <div className="mb-10">
+            <button
+              onClick={handleGoBack}
+              className="mb-6 inline-flex items-center gap-2 rounded-xl border border-pink-200 bg-white px-5 py-2.5 text-sm font-semibold text-pink-700 transition hover:bg-pink-50"
+            >
+              <ArrowLeft size={17} />
+              Go Back
+            </button>
+
             <p className="text-sm font-semibold uppercase tracking-widest text-pink-600">
               Customer Dashboard
             </p>
