@@ -233,3 +233,7 @@ export const confirmDemoPayment = async (appointmentId, token) => {
 export const getAllTransactions = async (token) => {
   return authenticatedRequest("/api/payments/transactions", token);
 };
+
+export const getMyPaymentHistory = async (token) => {
+  return authenticatedRequest("/api/payments/history", token);
+};
